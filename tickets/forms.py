@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from .models import Ticket, Comment, Attachment, Department
 
 class TicketForm(forms.ModelForm):
@@ -80,3 +81,68 @@ class AttachmentForm(forms.ModelForm):
     class Meta:
         model = Attachment
         fields = ['file']
+
+# Staff management forms
+class StaffCreationForm(UserCreationForm):
+    first_name = forms.CharField(max_length=30, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    last_name = forms.CharField(max_length=30, required=True, widget=forms.TextInput(attrs={'class': 'form-control'}))
+    email = forms.EmailField(max_length=254, required=True, widget=forms.EmailInput(attrs={'class': 'form-control'}))
+    departments = forms.ModelMultipleChoiceField(
+        queryset=Department.objects.all(),
+        required=True,
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    class Meta:
+        model = User
+        fields = ('username', 'first_name', 'last_name', 'email', 'password1', 'password2', 'departments')
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['password1'].widget.attrs.update({'class': 'form-control'})
+        self.fields['password2'].widget.attrs.update({'class': 'form-control'})
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.is_staff = True  # Set as staff
+        
+        if commit:
+            user.save()
+            # Add to selected departments
+            if self.cleaned_data.get('departments'):
+                user.departments.set(self.cleaned_data['departments'])
+        return user
+
+class StaffEditForm(forms.ModelForm):
+    departments = forms.ModelMultipleChoiceField(
+        queryset=Department.objects.all(),
+        required=True,
+        widget=forms.CheckboxSelectMultiple
+    )
+
+    class Meta:
+        model = User
+        fields = ('username', 'first_name', 'last_name', 'email', 'is_active', 'departments')
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            # Initialize departments with user's current departments
+            self.initial['departments'] = self.instance.departments.all()
+
+    def save(self, commit=True):
+        user = super().save(commit=commit)
+        if commit and 'departments' in self.cleaned_data:
+            # Update departments
+            user.departments.set(self.cleaned_data['departments'])
+        return user

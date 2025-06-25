@@ -93,7 +93,7 @@
                                 Uploaded by {{ attachment.uploaded_by.username }}
                                 on {{ attachment.uploaded_at|date:"M d, Y" }}
                             </small>
-                            {% if user == attachment.uploaded_by or user == ticket.created_by or user.is_staff %}
+                            {% if user == attachment.uploaded_by or user == ticket.created_by or user.is_superuser %}
                             <form method="post" action="{% url 'delete_attachment' ticket.id attachment.id %}" class="d-inline">
                                 {% csrf_token %}
                                 <button type="submit" class="btn btn-danger btn-sm" 
@@ -154,8 +154,12 @@
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
+                    {% if user.is_staff or user.is_superuser %}
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary">Back to Dashboard</a>
+                    {% else %}
                     <a href="{% url 'my_tickets' %}" class="btn btn-secondary">Back to Tickets</a>
-                    {% if user == ticket.created_by or user.is_staff %}
+                    {% endif %}
+                    {% if user == ticket.created_by or user.is_superuser %}
                     <a href="{% url 'update_ticket' ticket.id %}" class="btn btn-primary">Edit Ticket</a>
                     {% endif %}
                 </div>

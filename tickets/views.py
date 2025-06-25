@@ -1,12 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.db.models import Q, Count
 from django.core.paginator import Paginator
 import os
 
 from .models import Ticket, Comment, Attachment, Department
-from .forms import TicketForm, CommentForm, AttachmentForm, AssignTicketForm
+from .forms import TicketForm, CommentForm, AttachmentForm, AssignTicketForm, StaffCreationForm, StaffEditForm
+from django.contrib.auth.models import User
 
 @login_required
 def delete_attachment(request, ticket_id, attachment_id):
@@ -18,7 +19,7 @@ def delete_attachment(request, ticket_id, attachment_id):
     attachment = get_object_or_404(Attachment, pk=attachment_id, ticket=ticket)
     
     # Check if user has permission to delete the attachment
-    if request.user == ticket.created_by or request.user == attachment.uploaded_by or request.user.is_staff:
+    if request.user == ticket.created_by or request.user == attachment.uploaded_by or request.user.is_superuser:
         try:
             # Delete the actual file
             if attachment.file:
@@ -107,19 +108,29 @@ def dashboard(request):
     
     # Only prepare chart data for superusers
     if request.user.is_superuser:
-        # Get chart data
-        status_data = tickets.values('status').annotate(count=Count('status')).order_by('status')
-        priority_data = tickets.values('priority').annotate(count=Count('priority')).order_by('priority')
-        
-        # Get department distribution
-        department_data = tickets.values('department__name').annotate(count=Count('department')).order_by('-count')
-        
-        # Add chart data to context
-        context.update({
-            'status_data': list(status_data),
-            'priority_data': list(priority_data),
-            'department_data': list(department_data),
-        })
+        try:
+            # Get chart data with default values for empty results
+            status_data = list(tickets.values('status').annotate(count=Count('status')).order_by('status'))
+            priority_data = list(tickets.values('priority').annotate(count=Count('priority')).order_by('priority'))
+            
+            # Get department distribution
+            department_data = list(tickets.values('department__name').annotate(count=Count('department')).filter(department__name__isnull=False).order_by('-count'))
+            
+            # Add chart data to context
+            context.update({
+                'status_data': status_data,
+                'priority_data': priority_data,
+                'department_data': department_data,
+            })
+        except Exception as e:
+            # Log the error but continue rendering the page
+            print(f"Error preparing chart data: {str(e)}")
+            messages.warning(request, "There was an issue loading chart data.")
+            context.update({
+                'status_data': [],
+                'priority_data': [],
+                'department_data': [],
+            })
     
     # Paginate results
     paginator = Paginator(tickets, 10)  # 10 tickets per page
@@ -281,8 +292,8 @@ def ticket_detail(request, pk):
 def update_ticket(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
     
-    # Check if the user has permission to update
-    if request.user != ticket.created_by and not request.user.is_staff:
+    # Check if the user has permission to update - only ticket creator or superuser
+    if request.user != ticket.created_by and not request.user.is_superuser:
         messages.error(request, "You don't have permission to update this ticket.")
         return redirect('ticket_detail', pk=pk)
     
@@ -321,6 +332,250 @@ def update_ticket(request, pk):
         'attachment_form': attachment_form,
     }
     return render(request, 'tickets/update_ticket.html', context)
+
+def superuser_required(function):
+    """Decorator to check if the user is a superuser"""
+    actual_decorator = user_passes_test(lambda u: u.is_superuser)
+    return actual_decorator(function)
+
+@login_required
+@superuser_required
+def staff_list(request):
+    """List all staff members"""
+    staff = User.objects.filter(is_staff=True).order_by('username')
+    
+    context = {
+        'staff': staff,
+    }
+    return render(request, 'tickets/staff/staff_list.html', context)
+
+@login_required
+@superuser_required
+def staff_create(request):
+    """Create a new staff member"""
+    if request.method == 'POST':
+        form = StaffCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Staff member created successfully!")
+            return redirect('staff_list')
+    else:
+        form = StaffCreationForm()
+    
+    context = {
+        'form': form,
+        'title': 'Create Staff Member'
+    }
+    return render(request, 'tickets/staff/staff_form.html', context)
+
+@login_required
+@superuser_required
+def staff_edit(request, pk):
+    """Edit an existing staff member"""
+    try:
+        # Get the staff user
+        staff = User.objects.get(pk=pk, is_staff=True)
+        
+        # Don't allow editing superusers unless you're editing yourself
+        if staff.is_superuser and staff != request.user:
+            messages.error(request, "You cannot edit other superusers.")
+            return redirect('staff_list')
+        
+        if request.method == 'POST':
+            # Process the form data
+            form = StaffEditForm(request.POST, instance=staff)
+            if form.is_valid():
+                # Save the form without committing to the database yet
+                user = form.save(commit=False)
+                # Save the user to the database
+                user.save()
+                # Save the many-to-many data for the form
+                form.save_m2m()
+                messages.success(request, "Staff member updated successfully!")
+                return redirect('staff_list')
+        else:
+            # Create a form instance with the staff user data
+            form = StaffEditForm(instance=staff)
+        
+        # Render the form
+        context = {
+            'form': form,
+            'staff': staff,
+            'title': 'Edit Staff Member'
+        }
+        return render(request, 'tickets/staff/staff_form.html', context)
+    except User.DoesNotExist:
+        messages.error(request, "Staff member not found.")
+        return redirect('staff_list')
+    except Exception as e:
+        messages.error(request, f"Error editing staff: {str(e)}")
+        return redirect('staff_list')
+
+@login_required
+@superuser_required
+def staff_edit_alt(request, pk):
+    """Alternative method to edit an existing staff member"""
+    try:
+        # Get the staff user
+        staff = User.objects.get(pk=pk, is_staff=True)
+        
+        # Don't allow editing superusers unless you're editing yourself
+        if staff.is_superuser and staff != request.user:
+            messages.error(request, "You cannot edit other superusers.")
+            return redirect('staff_list')
+        
+        if request.method == 'POST':
+            # Process the form data manually
+            username = request.POST.get('username')
+            first_name = request.POST.get('first_name')
+            last_name = request.POST.get('last_name')
+            email = request.POST.get('email')
+            is_active = request.POST.get('is_active') == 'on'
+            department_ids = request.POST.getlist('departments')
+            
+            # Update the user
+            staff.username = username
+            staff.first_name = first_name
+            staff.last_name = last_name
+            staff.email = email
+            staff.is_active = is_active
+            staff.save()
+            
+            # Update departments
+            departments = Department.objects.filter(id__in=department_ids)
+            staff.departments.set(departments)
+            
+            messages.success(request, "Staff member updated successfully!")
+            return redirect('staff_list')
+        else:
+            # Create a form instance with the staff user data
+            form = StaffEditForm(instance=staff)
+        
+        # Render the form
+        context = {
+            'form': form,
+            'staff': staff,
+            'title': 'Edit Staff Member',
+            'departments': Department.objects.all(),
+            'staff_departments': staff.departments.all().values_list('id', flat=True)
+        }
+        return render(request, 'tickets/staff/staff_form_alt.html', context)
+    except User.DoesNotExist:
+        messages.error(request, "Staff member not found.")
+        return redirect('staff_list')
+    except Exception as e:
+        messages.error(request, f"Error editing staff: {str(e)}")
+        return redirect('staff_list')
+
+@login_required
+@superuser_required
+def staff_delete(request, pk):
+    """Delete a staff member"""
+    staff = get_object_or_404(User, pk=pk, is_staff=True)
+    
+    # Don't allow deleting superusers
+    if staff.is_superuser:
+        messages.error(request, "You cannot delete a superuser.")
+        return redirect('staff_list')
+    
+    # Don't allow deleting yourself
+    if staff == request.user:
+        messages.error(request, "You cannot delete yourself.")
+        return redirect('staff_list')
+    
+    if request.method == 'POST':
+        # Get tickets assigned to this staff and reassign them
+        assigned_tickets = Ticket.objects.filter(assigned_to=staff)
+        for ticket in assigned_tickets:
+            ticket.assigned_to = None
+            ticket.save()
+            
+        staff.delete()
+        messages.success(request, "Staff member deleted successfully!")
+        return redirect('staff_list')
+    
+    context = {
+        'staff': staff,
+    }
+    return render(request, 'tickets/staff/staff_confirm_delete.html', context)
+
+@login_required
+@superuser_required
+def staff_create_alt(request):
+    """Alternative method to create a new staff member"""
+    try:
+        if request.method == 'POST':
+            # Process the form data manually
+            username = request.POST.get('username')
+            first_name = request.POST.get('first_name')
+            last_name = request.POST.get('last_name')
+            email = request.POST.get('email')
+            password1 = request.POST.get('password1')
+            password2 = request.POST.get('password2')
+            department_ids = request.POST.getlist('departments')
+            
+            # Validate the form data
+            errors = {}
+            
+            if not username:
+                errors['username'] = ['Username is required.']
+            elif User.objects.filter(username=username).exists():
+                errors['username'] = ['A user with that username already exists.']
+                
+            if not password1:
+                errors['password1'] = ['Password is required.']
+                
+            if not password2:
+                errors['password2'] = ['Password confirmation is required.']
+                
+            if password1 and password2 and password1 != password2:
+                errors['password2'] = ['The two password fields didn\'t match.']
+                
+            if not department_ids:
+                errors['departments'] = ['At least one department must be selected.']
+            
+            if errors:
+                # If there are errors, render the form again with error messages
+                context = {
+                    'title': 'Create Staff Member',
+                    'errors': errors,
+                    'username': username,
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'email': email,
+                    'departments': Department.objects.all(),
+                    'selected_departments': department_ids,
+                }
+                return render(request, 'tickets/staff/staff_form_create_alt.html', context)
+            
+            # Create the user
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password1,
+                first_name=first_name,
+                last_name=last_name
+            )
+            user.is_staff = True
+            user.save()
+            
+            # Add to selected departments
+            if department_ids:
+                departments = Department.objects.filter(id__in=department_ids)
+                user.departments.set(departments)
+            
+            messages.success(request, "Staff member created successfully!")
+            return redirect('staff_list')
+        else:
+            # Render the form
+            context = {
+                'title': 'Create Staff Member',
+                'departments': Department.objects.all(),
+            }
+            return render(request, 'tickets/staff/staff_form_create_alt.html', context)
+    except Exception as e:
+        messages.error(request, f"Error creating staff: {str(e)}")
+        return redirect('staff_list')
 
 # 5. Configure URLs in helpdesk_project/urls.py
 

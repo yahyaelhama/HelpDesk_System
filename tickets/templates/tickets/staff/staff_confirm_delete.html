@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Staff Member{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6 offset-md-3">
+        <h2 class="mb-4">Confirm Deletion</h2>
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">Delete Staff Member</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-4">Are you sure you want to delete the staff member <strong>{{ staff.username }}</strong>?</p>
+                
+                <div class="alert alert-warning">
+                    <h5 class="alert-heading">Warning!</h5>
+                    <p>This action cannot be undone. The staff member will be removed from the system.</p>
+                    <hr>
+                    <p class="mb-0">Any tickets assigned to this staff member will be unassigned.</p>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'staff_list' %}" class="btn btn-secondary">Cancel</a>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete Staff Member</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

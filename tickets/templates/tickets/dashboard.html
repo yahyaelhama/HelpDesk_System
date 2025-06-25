@@ -205,140 +205,186 @@
 {% block extra_js %}
 {% if user.is_superuser %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Status Chart
-        const statusCtx = document.getElementById('statusChart').getContext('2d');
-        const statusLabels = {
-            'new': 'New',
-            'in_progress': 'In Progress',
-            'pending': 'Pending',
-            'resolved': 'Resolved',
-            'closed': 'Closed'
-        };
-        const statusColors = {
-            'new': '#0dcaf0',         // info
-            'in_progress': '#0d6efd',  // primary
-            'pending': '#ffc107',     // warning
-            'resolved': '#198754',    // success
-            'closed': '#6c757d'       // secondary
-        };
-        
-        const statusData = {{ status_data|safe }};
-        const statusLabelsArray = statusData.map(function(item) { 
-            return statusLabels[item.status] || item.status;
-        });
-        const statusCountsArray = statusData.map(function(item) {
-            return item.count;
-        });
-        const statusColorsArray = statusData.map(function(item) {
-            return statusColors[item.status] || '#000000';
-        });
-        
-        new Chart(statusCtx, {
-            type: 'doughnut',
-            data: {
-                labels: statusLabelsArray,
-                datasets: [{
-                    data: statusCountsArray,
-                    backgroundColor: statusColorsArray,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
+// Wait for DOM to load
+document.addEventListener('DOMContentLoaded', function() {
+    // Define chart data from Django context
+    var statusData = {{ status_data|default:"[]"|safe }};
+    var priorityData = {{ priority_data|default:"[]"|safe }};
+    var departmentData = {{ department_data|default:"[]"|safe }};
+    
+    // Check if status chart can be created
+    if (statusData && statusData.length > 0) {
+        var statusCanvas = document.getElementById('statusChart');
+        if (statusCanvas) {
+            var statusCtx = statusCanvas.getContext('2d');
+            
+            // Prepare status data
+            var statusLabels = [];
+            var statusValues = [];
+            var statusBackgrounds = [];
+            
+            for (var i = 0; i < statusData.length; i++) {
+                var item = statusData[i];
+                var color = '#000000';
+                var label = item.status;
+                
+                // Map status to readable labels
+                if (item.status === 'new') {
+                    label = 'New';
+                    color = '#0dcaf0';
+                } else if (item.status === 'in_progress') {
+                    label = 'In Progress';
+                    color = '#0d6efd';
+                } else if (item.status === 'pending') {
+                    label = 'Pending';
+                    color = '#ffc107';
+                } else if (item.status === 'resolved') {
+                    label = 'Resolved';
+                    color = '#198754';
+                } else if (item.status === 'closed') {
+                    label = 'Closed';
+                    color = '#6c757d';
                 }
+                
+                statusLabels.push(label);
+                statusValues.push(item.count);
+                statusBackgrounds.push(color);
             }
-        });
-        
-        // Priority Chart
-        const priorityCtx = document.getElementById('priorityChart').getContext('2d');
-        const priorityLabels = {
-            'low': 'Low',
-            'medium': 'Medium',
-            'high': 'High',
-            'urgent': 'Urgent'
-        };
-        const priorityColors = {
-            'low': '#198754',     // success
-            'medium': '#0dcaf0',  // info
-            'high': '#ffc107',    // warning
-            'urgent': '#dc3545'   // danger
-        };
-        
-        const priorityData = {{ priority_data|safe }};
-        const priorityLabelsArray = priorityData.map(function(item) {
-            return priorityLabels[item.priority] || item.priority;
-        });
-        const priorityCountsArray = priorityData.map(function(item) {
-            return item.count;
-        });
-        const priorityColorsArray = priorityData.map(function(item) {
-            return priorityColors[item.priority] || '#000000';
-        });
-        
-        new Chart(priorityCtx, {
-            type: 'pie',
-            data: {
-                labels: priorityLabelsArray,
-                datasets: [{
-                    data: priorityCountsArray,
-                    backgroundColor: priorityColorsArray,
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: {
-                    legend: {
-                        position: 'bottom'
-                    }
-                }
-            }
-        });
-        
-        // Department Chart
-        const departmentCtx = document.getElementById('departmentChart').getContext('2d');
-        const departmentData = {{ department_data|safe }};
-        const departmentLabelsArray = departmentData.map(function(item) {
-            return item.department__name;
-        });
-        const departmentCountsArray = departmentData.map(function(item) {
-            return item.count;
-        });
-        
-        new Chart(departmentCtx, {
-            type: 'bar',
-            data: {
-                labels: departmentLabelsArray,
-                datasets: [{
-                    label: 'Number of Tickets',
-                    data: departmentCountsArray,
-                    backgroundColor: '#0d6efd',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            precision: 0
+            
+            // Create status chart
+            new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: statusValues,
+                        backgroundColor: statusBackgrounds,
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
                         }
                     }
+                }
+            });
+        }
+    }
+    
+    // Check if priority chart can be created
+    if (priorityData && priorityData.length > 0) {
+        var priorityCanvas = document.getElementById('priorityChart');
+        if (priorityCanvas) {
+            var priorityCtx = priorityCanvas.getContext('2d');
+            
+            // Prepare priority data
+            var priorityLabels = [];
+            var priorityValues = [];
+            var priorityBackgrounds = [];
+            
+            for (var i = 0; i < priorityData.length; i++) {
+                var item = priorityData[i];
+                var color = '#000000';
+                var label = item.priority;
+                
+                // Map priority to readable labels
+                if (item.priority === 'low') {
+                    label = 'Low';
+                    color = '#198754';
+                } else if (item.priority === 'medium') {
+                    label = 'Medium';
+                    color = '#0dcaf0';
+                } else if (item.priority === 'high') {
+                    label = 'High';
+                    color = '#ffc107';
+                } else if (item.priority === 'urgent') {
+                    label = 'Urgent';
+                    color = '#dc3545';
+                }
+                
+                priorityLabels.push(label);
+                priorityValues.push(item.count);
+                priorityBackgrounds.push(color);
+            }
+            
+            // Create priority chart
+            new Chart(priorityCtx, {
+                type: 'pie',
+                data: {
+                    labels: priorityLabels,
+                    datasets: [{
+                        data: priorityValues,
+                        backgroundColor: priorityBackgrounds,
+                        borderWidth: 1
+                    }]
                 },
-                plugins: {
-                    legend: {
-                        display: false
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
                     }
                 }
+            });
+        }
+    }
+    
+    // Check if department chart can be created
+    if (departmentData && departmentData.length > 0) {
+        var departmentCanvas = document.getElementById('departmentChart');
+        if (departmentCanvas) {
+            var departmentCtx = departmentCanvas.getContext('2d');
+            
+            // Prepare department data
+            var departmentLabels = [];
+            var departmentValues = [];
+            
+            for (var i = 0; i < departmentData.length; i++) {
+                var item = departmentData[i];
+                if (item.department__name) {
+                    departmentLabels.push(item.department__name);
+                    departmentValues.push(item.count);
+                }
             }
-        });
-    });
+            
+            if (departmentLabels.length > 0) {
+                // Create department chart
+                new Chart(departmentCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: departmentLabels,
+                        datasets: [{
+                            label: 'Number of Tickets',
+                            data: departmentValues,
+                            backgroundColor: '#0d6efd',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                });
+            }
+        }
+    }
+});
 </script>
 {% endif %}
 {% endblock %}
