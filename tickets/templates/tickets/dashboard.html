@@ -154,6 +154,9 @@
                                 <td>{{ ticket.created_at|date:"M d, Y" }}</td>
                                 <td>
                                     <a href="{% url 'ticket_detail' ticket.id %}" class="btn btn-sm btn-primary">View</a>
+                                    {% if user.is_superuser %}
+                                    <a href="{% url 'delete_ticket' ticket.id %}" class="btn btn-sm btn-danger">Delete</a>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% empty %}

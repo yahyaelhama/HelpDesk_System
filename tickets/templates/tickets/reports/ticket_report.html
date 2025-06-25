@@ -1,0 +1,354 @@
+{% extends 'base.html' %}
+{% load ticket_extras %}
+
+{% block title %}Ticket Report{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-card {
+        transition: transform 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    .chart-container {
+        height: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Ticket Report</h2>
+            <a href="{% url 'ticket_report' %}?start_date={{ start_date|date:'Y-m-d' }}&end_date={{ end_date|date:'Y-m-d' }}&department={{ selected_department }}&format=csv" class="btn btn-success">
+                <i class="bi bi-download"></i> Download CSV
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Form -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Filter Report</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <input type="date" id="start_date" name="start_date" class="form-control" value="{{ start_date|date:'Y-m-d' }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <input type="date" id="end_date" name="end_date" class="form-control" value="{{ end_date|date:'Y-m-d' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="department" class="form-label">Department</label>
+                        <select id="department" name="department" class="form-select">
+                            <option value="">All Departments</option>
+                            {% for dept in departments %}
+                            <option value="{{ dept.id }}" {% if selected_department == dept.id|stringformat:"i" %}selected{% endif %}>
+                                {{ dept.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Apply Filters</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h3 class="mb-3">Summary Statistics</h3>
+    </div>
+    
+    <div class="col-md-2">
+        <div class="card stat-card bg-light">
+            <div class="card-body text-center">
+                <h1 class="display-4">{{ total_tickets }}</h1>
+                <p class="text-muted mb-0">Total Tickets</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-2">
+        <div class="card stat-card bg-info text-white">
+            <div class="card-body text-center">
+                <h1 class="display-4">{{ new_tickets }}</h1>
+                <p class="mb-0">New</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-2">
+        <div class="card stat-card bg-primary text-white">
+            <div class="card-body text-center">
+                <h1 class="display-4">{{ in_progress_tickets }}</h1>
+                <p class="mb-0">In Progress</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-2">
+        <div class="card stat-card bg-warning text-dark">
+            <div class="card-body text-center">
+                <h1 class="display-4">{{ pending_tickets }}</h1>
+                <p class="mb-0">Pending</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-2">
+        <div class="card stat-card bg-success text-white">
+            <div class="card-body text-center">
+                <h1 class="display-4">{{ resolved_tickets }}</h1>
+                <p class="mb-0">Resolved</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-2">
+        <div class="card stat-card bg-secondary text-white">
+            <div class="card-body text-center">
+                <h1 class="display-4">{{ closed_tickets }}</h1>
+                <p class="mb-0">Closed</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Statistics -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Unassigned Tickets</h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="display-5">{{ unassigned_tickets }}</h2>
+                <p class="text-muted mb-0">Tickets without staff assigned</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Resolution Rate</h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="display-5">{{ resolution_rate|floatformat:2 }}%</h2>
+                <p class="text-muted mb-0">Percentage of resolved/closed tickets</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card stat-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Average Tickets Per Day</h5>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="display-5">{{ avg_tickets_per_day|floatformat:2 }}</h2>
+                <p class="text-muted mb-0">Average number of tickets created daily</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Average Resolution Time -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Average Resolution Time</h5>
+            </div>
+            <div class="card-body text-center">
+                {% if avg_resolution_time %}
+                <h2 class="display-5">
+                    {{ avg_resolution_time.days }} days
+                    {% if avg_resolution_time.seconds > 0 %}
+                    , {{ avg_resolution_time.seconds|hours_from_seconds }} hours
+                    , {{ avg_resolution_time.seconds|minutes_from_seconds }} minutes
+                    {% endif %}
+                </h2>
+                {% else %}
+                <h2 class="display-5 text-muted">No data available</h2>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <!-- Priority Distribution -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Tickets by Priority</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="priorityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Department Distribution -->
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Tickets by Department</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="departmentChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Daily Trend -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Daily Ticket Trend</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Priority Chart
+    var priorityCtx = document.getElementById('priorityChart').getContext('2d');
+    var priorityChart = new Chart(priorityCtx, {
+        type: 'pie',
+        data: {
+            labels: ['Low', 'Medium', 'High', 'Urgent'],
+            datasets: [{
+                data: [{{ low_priority }}, {{ medium_priority }}, {{ high_priority }}, {{ urgent_priority }}],
+                backgroundColor: [
+                    '#198754', // success - low
+                    '#0dcaf0', // info - medium
+                    '#ffc107', // warning - high
+                    '#dc3545'  // danger - urgent
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    // Department Chart
+    var departmentCtx = document.getElementById('departmentChart').getContext('2d');
+    var departmentLabels = [];
+    var departmentData = [];
+    var departmentColors = [];
+    
+    {% for dept in department_stats %}
+    departmentLabels.push("{{ dept.department__name|default:'No Department' }}");
+    departmentData.push({{ dept.count }});
+    // Generate random color
+    var color = '#' + Math.floor(Math.random()*16777215).toString(16);
+    departmentColors.push(color);
+    {% endfor %}
+    
+    var departmentChart = new Chart(departmentCtx, {
+        type: 'bar',
+        data: {
+            labels: departmentLabels,
+            datasets: [{
+                label: 'Tickets',
+                data: departmentData,
+                backgroundColor: departmentColors,
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            }
+        }
+    });
+    
+    // Trend Chart
+    var trendCtx = document.getElementById('trendChart').getContext('2d');
+    var trendLabels = [];
+    var trendData = [];
+    
+    {% for day in tickets_per_day %}
+    trendLabels.push("{{ day.day|date:'Y-m-d' }}");
+    trendData.push({{ day.count }});
+    {% endfor %}
+    
+    var trendChart = new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: trendLabels,
+            datasets: [{
+                label: 'Tickets Created',
+                data: trendData,
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

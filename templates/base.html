@@ -33,6 +33,12 @@
                         <li class="nav-item">
                             <a class="nav-link" href="{% url 'staff_list' %}">Staff Management</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'department_list' %}">Department Management</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'ticket_report' %}">Reports</a>
+                        </li>
                         {% endif %}
                         {% endif %}
                         {% if user.is_authenticated %}

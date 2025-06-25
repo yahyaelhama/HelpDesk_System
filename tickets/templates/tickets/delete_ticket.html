@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Ticket #{{ ticket.id }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">Delete Ticket #{{ ticket.id }}</h5>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">Are you sure you want to delete the following ticket?</p>
+                
+                <div class="alert alert-warning">
+                    <h6>{{ ticket.title }}</h6>
+                    <p class="mb-1"><strong>Status:</strong> {{ ticket.get_status_display }}</p>
+                    <p class="mb-1"><strong>Priority:</strong> {{ ticket.get_priority_display }}</p>
+                    <p class="mb-1"><strong>Created by:</strong> {{ ticket.created_by.username }}</p>
+                    <p class="mb-0"><strong>Department:</strong> {{ ticket.department }}</p>
+                </div>
+                
+                <div class="alert alert-danger">
+                    <p class="mb-0"><i class="bi bi-exclamation-triangle-fill me-2"></i> This action cannot be undone. All comments and attachments associated with this ticket will also be deleted.</p>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'ticket_detail' ticket.id %}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-danger">Delete Ticket</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

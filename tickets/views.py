@@ -1,9 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Avg, F, ExpressionWrapper, DurationField
 from django.core.paginator import Paginator
 import os
+import csv
+from datetime import datetime, timedelta
+from django.http import HttpResponse
+from django.db.models.functions import TruncDay, TruncWeek, TruncMonth
 
 from .models import Ticket, Comment, Attachment, Department
 from .forms import TicketForm, CommentForm, AttachmentForm, AssignTicketForm, StaffCreationForm, StaffEditForm
@@ -245,7 +249,7 @@ def ticket_detail(request, pk):
     assign_form = None
     
     # Only create assign form for staff members in the same department or superusers
-    if request.user.is_superuser or (request.user.is_staff and request.user.departments.filter(id=ticket.department.id).exists()):
+    if request.user.is_staff and not request.user.is_superuser and request.user.departments.filter(id=ticket.department.id).exists():
         assign_form = AssignTicketForm(instance=ticket, department=ticket.department)
     
     # Handle comment submission
@@ -270,8 +274,8 @@ def ticket_detail(request, pk):
             messages.success(request, 'Attachment uploaded successfully!')
             return redirect('ticket_detail', pk=pk)
     
-    # Handle ticket assignment and status update (staff only)
-    if request.method == 'POST' and 'update_ticket' in request.POST and request.user.is_staff:
+    # Handle ticket assignment and status update (staff only, not superusers)
+    if request.method == 'POST' and 'update_ticket' in request.POST and request.user.is_staff and not request.user.is_superuser:
         assign_form = AssignTicketForm(request.POST, instance=ticket, department=ticket.department)
         if assign_form.is_valid():
             assign_form.save()
@@ -576,6 +580,522 @@ def staff_create_alt(request):
     except Exception as e:
         messages.error(request, f"Error creating staff: {str(e)}")
         return redirect('staff_list')
+
+@login_required
+@superuser_required
+def delete_ticket(request, pk):
+    """Delete a ticket (superuser only)"""
+    ticket = get_object_or_404(Ticket, pk=pk)
+    
+    if request.method == 'POST':
+        # Store the department ID for redirection
+        department_id = ticket.department_id if ticket.department else None
+        
+        # Delete the ticket
+        ticket.delete()
+        messages.success(request, f"Ticket #{pk} has been deleted successfully.")
+        
+        # Redirect to dashboard with the department filter if available
+        if department_id:
+            return redirect(f'/?department={department_id}')
+        else:
+            return redirect('dashboard')
+    
+    context = {
+        'ticket': ticket,
+    }
+    return render(request, 'tickets/delete_ticket.html', context)
+
+@login_required
+@superuser_required
+def department_list(request):
+    """List all departments"""
+    departments = Department.objects.all().order_by('name')
+    
+    context = {
+        'departments': departments,
+    }
+    return render(request, 'tickets/departments/department_list.html', context)
+
+@login_required
+@superuser_required
+def department_create(request):
+    """Create a new department"""
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        staff_ids = request.POST.getlist('staff')
+        
+        # Validate form data
+        errors = {}
+        
+        if not name:
+            errors['name'] = ['Department name is required.']
+        elif Department.objects.filter(name=name).exists():
+            errors['name'] = ['A department with this name already exists.']
+        
+        if errors:
+            # If there are errors, render the form again with error messages
+            context = {
+                'title': 'Create Department',
+                'errors': errors,
+                'name': name,
+                'description': description,
+                'staff': User.objects.filter(is_staff=True),
+                'selected_staff': staff_ids,
+            }
+            return render(request, 'tickets/departments/department_form.html', context)
+        
+        # Create the department
+        department = Department.objects.create(
+            name=name,
+            description=description
+        )
+        
+        # Add staff members
+        if staff_ids:
+            staff = User.objects.filter(id__in=staff_ids, is_staff=True)
+            department.staff.set(staff)
+        
+        messages.success(request, "Department created successfully!")
+        return redirect('department_list')
+    
+    # GET request - show the form
+    context = {
+        'title': 'Create Department',
+        'staff': User.objects.filter(is_staff=True),
+    }
+    return render(request, 'tickets/departments/department_form.html', context)
+
+@login_required
+@superuser_required
+def department_edit(request, pk):
+    """Edit an existing department"""
+    department = get_object_or_404(Department, pk=pk)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        staff_ids = request.POST.getlist('staff')
+        
+        # Validate form data
+        errors = {}
+        
+        if not name:
+            errors['name'] = ['Department name is required.']
+        elif Department.objects.filter(name=name).exclude(pk=pk).exists():
+            errors['name'] = ['A department with this name already exists.']
+        
+        if errors:
+            # If there are errors, render the form again with error messages
+            context = {
+                'title': 'Edit Department',
+                'department': department,
+                'errors': errors,
+                'name': name,
+                'description': description,
+                'staff': User.objects.filter(is_staff=True),
+                'selected_staff': staff_ids,
+            }
+            return render(request, 'tickets/departments/department_form.html', context)
+        
+        # Update the department
+        department.name = name
+        department.description = description
+        department.save()
+        
+        # Update staff members
+        if staff_ids:
+            staff = User.objects.filter(id__in=staff_ids, is_staff=True)
+            department.staff.set(staff)
+        else:
+            department.staff.clear()
+        
+        messages.success(request, "Department updated successfully!")
+        return redirect('department_list')
+    
+    # GET request - show the form with current data
+    context = {
+        'title': 'Edit Department',
+        'department': department,
+        'name': department.name,
+        'description': department.description,
+        'staff': User.objects.filter(is_staff=True),
+        'selected_staff': [str(staff.id) for staff in department.staff.all()],
+    }
+    return render(request, 'tickets/departments/department_form.html', context)
+
+@login_required
+@superuser_required
+def department_delete(request, pk):
+    """Delete a department"""
+    department = get_object_or_404(Department, pk=pk)
+    
+    # Check if there are tickets associated with this department
+    if Ticket.objects.filter(department=department).exists():
+        messages.error(request, "Cannot delete department with associated tickets. Reassign tickets first.")
+        return redirect('department_list')
+    
+    if request.method == 'POST':
+        department.delete()
+        messages.success(request, "Department deleted successfully!")
+        return redirect('department_list')
+    
+    context = {
+        'department': department,
+    }
+    return render(request, 'tickets/departments/department_confirm_delete.html', context)
+
+@login_required
+@superuser_required
+def ticket_report(request):
+    """Generate a report with ticket statistics for superusers"""
+    # Get filter parameters
+    start_date_str = request.GET.get('start_date', '')
+    end_date_str = request.GET.get('end_date', '')
+    department_id = request.GET.get('department', '')
+    format_type = request.GET.get('format', '')
+    
+    # Default to last 30 days if no dates provided
+    today = datetime.now().date()
+    if not start_date_str:
+        start_date = today - timedelta(days=30)
+    else:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            start_date = today - timedelta(days=30)
+            messages.warning(request, "Invalid start date format. Using last 30 days.")
+    
+    if not end_date_str:
+        end_date = today
+    else:
+        try:
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            end_date = today
+            messages.warning(request, "Invalid end date format. Using today as end date.")
+    
+    # Base queryset for tickets in the date range
+    tickets = Ticket.objects.filter(
+        created_at__date__gte=start_date,
+        created_at__date__lte=end_date
+    )
+    
+    # Filter by department if provided
+    if department_id:
+        tickets = tickets.filter(department_id=department_id)
+    
+    # Calculate statistics
+    total_tickets = tickets.count()
+    new_tickets = tickets.filter(status='new').count()
+    in_progress_tickets = tickets.filter(status='in_progress').count()
+    pending_tickets = tickets.filter(status='pending').count()
+    resolved_tickets = tickets.filter(status='resolved').count()
+    closed_tickets = tickets.filter(status='closed').count()
+    
+    # Calculate percentage of resolved/closed tickets
+    resolution_rate = 0
+    if total_tickets > 0:
+        resolution_rate = ((resolved_tickets + closed_tickets) / total_tickets) * 100
+    
+    # Calculate average resolution time for resolved and closed tickets
+    resolved_closed_tickets = tickets.filter(
+        Q(status='resolved') | Q(status='closed'),
+        updated_at__isnull=False
+    )
+    
+    # Use ExpressionWrapper to calculate duration
+    resolution_time = ExpressionWrapper(
+        F('updated_at') - F('created_at'),
+        output_field=DurationField()
+    )
+    
+    avg_resolution_time = resolved_closed_tickets.annotate(
+        resolution_time=resolution_time
+    ).aggregate(avg_time=Avg('resolution_time'))
+    
+    # Calculate tickets by priority
+    low_priority = tickets.filter(priority='low').count()
+    medium_priority = tickets.filter(priority='medium').count()
+    high_priority = tickets.filter(priority='high').count()
+    urgent_priority = tickets.filter(priority='urgent').count()
+    
+    # Calculate tickets by department
+    department_stats = tickets.values('department__name').annotate(
+        count=Count('id')
+    ).order_by('-count')
+    
+    # Calculate tickets created per day for trend analysis
+    tickets_per_day = tickets.annotate(
+        day=TruncDay('created_at')
+    ).values('day').annotate(
+        count=Count('id')
+    ).order_by('day')
+    
+    # Calculate tickets with no staff assigned
+    unassigned_tickets = tickets.filter(assigned_to__isnull=True).count()
+    
+    # Calculate average tickets per day
+    days_in_range = (end_date - start_date).days + 1
+    avg_tickets_per_day = total_tickets / days_in_range if days_in_range > 0 else 0
+    
+    # Get all departments for filter dropdown
+    departments = Department.objects.all()
+    
+    # Prepare data for CSV export
+    if format_type == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="ticket_report_{today}.csv"'
+        
+        writer = csv.writer(response)
+        
+        # Helper function to create table borders
+        def add_table_border(width=50):
+            writer.writerow(['+' + '-' * width + '+'])
+            
+        def add_table_header(title, width=50):
+            writer.writerow(['+' + '-' * width + '+'])
+            padding = (width - len(title)) // 2
+            writer.writerow(['|' + ' ' * padding + title + ' ' * (width - len(title) - padding) + '|'])
+            writer.writerow(['+' + '-' * width + '+'])
+        
+        # Header with title and date range
+        add_table_header('HELPDESK TICKET REPORT', 70)
+        writer.writerow(['| Report generated on: ' + today.strftime("%Y-%m-%d %H:%M:%S") + ' ' * 30 + '|'])
+        writer.writerow(['| Date range: ' + f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}" + ' ' * 36 + '|'])
+        if department_id:
+            department = Department.objects.get(id=department_id)
+            dept_info = f"Department: {department.name}"
+            writer.writerow(['| ' + dept_info + ' ' * (68 - len(dept_info)) + '|'])
+        else:
+            writer.writerow(['| Department: All Departments' + ' ' * 42 + '|'])
+        writer.writerow(['+' + '-' * 70 + '+'])
+        writer.writerow([])
+        
+        # Summary statistics table with visual formatting
+        add_table_header('SUMMARY STATISTICS', 60)
+        writer.writerow(['| Metric' + ' ' * 25 + '| Value' + ' ' * 23 + '|'])
+        writer.writerow(['|' + '-' * 31 + '|' + '-' * 28 + '|'])
+        
+        def add_stat_row(metric, value):
+            metric_str = f"| {metric}"
+            value_str = f"| {value}"
+            writer.writerow([metric_str + ' ' * (31 - len(metric_str)) + value_str + ' ' * (28 - len(value_str)) + '|'])
+        
+        add_stat_row('Total Tickets', total_tickets)
+        add_stat_row('New Tickets', new_tickets)
+        add_stat_row('In Progress Tickets', in_progress_tickets)
+        add_stat_row('Pending Tickets', pending_tickets)
+        add_stat_row('Resolved Tickets', resolved_tickets)
+        add_stat_row('Closed Tickets', closed_tickets)
+        add_stat_row('Unassigned Tickets', unassigned_tickets)
+        add_stat_row('Resolution Rate', f'{resolution_rate:.2f}%')
+        add_stat_row('Average Tickets Per Day', f'{avg_tickets_per_day:.2f}')
+        
+        # Average resolution time
+        avg_time = avg_resolution_time.get('avg_time')
+        if avg_time:
+            days = avg_time.days
+            seconds = avg_time.seconds
+            hours = seconds // 3600
+            minutes = (seconds % 3600) // 60
+            add_stat_row('Average Resolution Time', f'{days} days, {hours} hours, {minutes} minutes')
+        else:
+            add_stat_row('Average Resolution Time', 'N/A')
+            
+        writer.writerow(['|' + '-' * 31 + '|' + '-' * 28 + '|'])
+        writer.writerow(['+' + '-' * 60 + '+'])
+        writer.writerow([])
+        
+        # Tickets by priority table with visual formatting
+        add_table_header('TICKETS BY PRIORITY', 60)
+        writer.writerow(['| Priority' + ' ' * 12 + '| Count' + ' ' * 5 + '| Percentage' + ' ' * 9 + '|'])
+        writer.writerow(['|' + '-' * 20 + '|' + '-' * 10 + '|' + '-' * 19 + '|'])
+        
+        def add_priority_row(priority, count, percentage):
+            priority_str = f"| {priority}"
+            count_str = f"| {count}"
+            percentage_str = f"| {percentage}"
+            writer.writerow([
+                priority_str + ' ' * (20 - len(priority_str)) + 
+                count_str + ' ' * (10 - len(count_str)) + 
+                percentage_str + ' ' * (19 - len(percentage_str)) + '|'
+            ])
+        
+        add_priority_row('Low', low_priority, f'{(low_priority/total_tickets*100):.1f}%' if total_tickets > 0 else '0.0%')
+        add_priority_row('Medium', medium_priority, f'{(medium_priority/total_tickets*100):.1f}%' if total_tickets > 0 else '0.0%')
+        add_priority_row('High', high_priority, f'{(high_priority/total_tickets*100):.1f}%' if total_tickets > 0 else '0.0%')
+        add_priority_row('Urgent', urgent_priority, f'{(urgent_priority/total_tickets*100):.1f}%' if total_tickets > 0 else '0.0%')
+        
+        writer.writerow(['|' + '-' * 20 + '|' + '-' * 10 + '|' + '-' * 19 + '|'])
+        writer.writerow(['+' + '-' * 60 + '+'])
+        writer.writerow([])
+        
+        # Tickets by department table with visual formatting
+        add_table_header('TICKETS BY DEPARTMENT', 70)
+        writer.writerow(['| Department' + ' ' * 20 + '| Count' + ' ' * 5 + '| Percentage' + ' ' * 9 + '|'])
+        writer.writerow(['|' + '-' * 30 + '|' + '-' * 10 + '|' + '-' * 19 + '|'])
+        
+        for dept in department_stats:
+            dept_name = dept['department__name'] or 'No Department'
+            if len(dept_name) > 27:
+                dept_name = dept_name[:24] + '...'
+            dept_count = dept['count']
+            dept_percentage = f'{(dept_count/total_tickets*100):.1f}%' if total_tickets > 0 else '0.0%'
+            
+            dept_str = f"| {dept_name}"
+            count_str = f"| {dept_count}"
+            percentage_str = f"| {dept_percentage}"
+            
+            writer.writerow([
+                dept_str + ' ' * (30 - len(dept_str)) + 
+                count_str + ' ' * (10 - len(count_str)) + 
+                percentage_str + ' ' * (19 - len(percentage_str)) + '|'
+            ])
+        
+        writer.writerow(['|' + '-' * 30 + '|' + '-' * 10 + '|' + '-' * 19 + '|'])
+        writer.writerow(['+' + '-' * 70 + '+'])
+        writer.writerow([])
+        
+        # Daily ticket trend table with visual formatting
+        add_table_header('DAILY TICKET TREND', 50)
+        writer.writerow(['| Date' + ' ' * 11 + '| Number of Tickets' + ' ' * 10 + '|'])
+        writer.writerow(['|' + '-' * 15 + '|' + '-' * 24 + '|'])
+        
+        for day_data in tickets_per_day:
+            date_str = f"| {day_data['day'].strftime('%Y-%m-%d')}"
+            count_str = f"| {day_data['count']}"
+            writer.writerow([
+                date_str + ' ' * (15 - len(date_str)) + 
+                count_str + ' ' * (24 - len(count_str)) + '|'
+            ])
+        
+        writer.writerow(['|' + '-' * 15 + '|' + '-' * 24 + '|'])
+        writer.writerow(['+' + '-' * 50 + '+'])
+        writer.writerow([])
+        
+        # Detailed ticket list with visual formatting - using a wider table
+        add_table_header('DETAILED TICKET LIST', 120)
+        
+        # Define column widths
+        col_widths = {
+            'id': 5,
+            'title': 25,
+            'status': 12,
+            'priority': 10,
+            'department': 15,
+            'created_by': 12,
+            'created_at': 16,
+            'updated_at': 16,
+            'resolution': 15
+        }
+        
+        # Create header row
+        header_row = '| ID' + ' ' * (col_widths['id'] - 2)
+        header_row += '| Title' + ' ' * (col_widths['title'] - 5)
+        header_row += '| Status' + ' ' * (col_widths['status'] - 6)
+        header_row += '| Priority' + ' ' * (col_widths['priority'] - 8)
+        header_row += '| Department' + ' ' * (col_widths['department'] - 10)
+        header_row += '| Created By' + ' ' * (col_widths['created_by'] - 10)
+        header_row += '| Created At' + ' ' * (col_widths['created_at'] - 10)
+        header_row += '| Updated At' + ' ' * (col_widths['updated_at'] - 10)
+        header_row += '| Resolution' + ' ' * (col_widths['resolution'] - 10) + '|'
+        
+        writer.writerow([header_row])
+        
+        # Create separator row
+        separator = '|' + '-' * col_widths['id']
+        separator += '|' + '-' * col_widths['title']
+        separator += '|' + '-' * col_widths['status']
+        separator += '|' + '-' * col_widths['priority']
+        separator += '|' + '-' * col_widths['department']
+        separator += '|' + '-' * col_widths['created_by']
+        separator += '|' + '-' * col_widths['created_at']
+        separator += '|' + '-' * col_widths['updated_at']
+        separator += '|' + '-' * col_widths['resolution'] + '|'
+        
+        writer.writerow([separator])
+        
+        # Add ticket data rows
+        for ticket in tickets:
+            resolution_time = 'N/A'
+            if ticket.status in ['resolved', 'closed'] and ticket.updated_at:
+                delta = ticket.updated_at - ticket.created_at
+                days = delta.days
+                seconds = delta.seconds
+                hours = seconds // 3600
+                minutes = (seconds % 3600) // 60
+                resolution_time = f'{days}d {hours}h {minutes}m'
+            
+            # Format title with truncation if needed
+            title = ticket.title
+            if len(title) > col_widths['title'] - 3:
+                title = title[:col_widths['title'] - 6] + '...'
+                
+            # Format department with truncation if needed
+            department = ticket.department.name if ticket.department else 'No Department'
+            if len(department) > col_widths['department'] - 3:
+                department = department[:col_widths['department'] - 6] + '...'
+                
+            # Format username with truncation if needed
+            username = ticket.created_by.username
+            if len(username) > col_widths['created_by'] - 3:
+                username = username[:col_widths['created_by'] - 6] + '...'
+            
+            # Build the data row
+            data_row = f"| {ticket.id}" + ' ' * (col_widths['id'] - len(str(ticket.id)) - 1)
+            data_row += f"| {title}" + ' ' * (col_widths['title'] - len(title) - 1)
+            data_row += f"| {ticket.get_status_display()}" + ' ' * (col_widths['status'] - len(ticket.get_status_display()) - 1)
+            data_row += f"| {ticket.get_priority_display()}" + ' ' * (col_widths['priority'] - len(ticket.get_priority_display()) - 1)
+            data_row += f"| {department}" + ' ' * (col_widths['department'] - len(department) - 1)
+            data_row += f"| {username}" + ' ' * (col_widths['created_by'] - len(username) - 1)
+            
+            created_at = ticket.created_at.strftime('%Y-%m-%d %H:%M')
+            data_row += f"| {created_at}" + ' ' * (col_widths['created_at'] - len(created_at) - 1)
+            
+            updated_at = ticket.updated_at.strftime('%Y-%m-%d %H:%M') if ticket.updated_at else 'N/A'
+            data_row += f"| {updated_at}" + ' ' * (col_widths['updated_at'] - len(updated_at) - 1)
+            
+            data_row += f"| {resolution_time}" + ' ' * (col_widths['resolution'] - len(resolution_time) - 1) + '|'
+            
+            writer.writerow([data_row])
+        
+        writer.writerow([separator])
+        writer.writerow(['+' + '-' * 120 + '+'])
+        writer.writerow([])
+        writer.writerow(['+' + '-' * 70 + '+'])
+        writer.writerow(['|' + ' ' * 25 + 'END OF REPORT' + ' ' * 25 + '|'])
+        writer.writerow(['+' + '-' * 70 + '+'])
+        
+        return response
+    
+    # Prepare context for HTML template
+    context = {
+        'tickets': tickets,
+        'total_tickets': total_tickets,
+        'new_tickets': new_tickets,
+        'in_progress_tickets': in_progress_tickets,
+        'pending_tickets': pending_tickets,
+        'resolved_tickets': resolved_tickets,
+        'closed_tickets': closed_tickets,
+        'avg_resolution_time': avg_resolution_time.get('avg_time'),
+        'low_priority': low_priority,
+        'medium_priority': medium_priority,
+        'high_priority': high_priority,
+        'urgent_priority': urgent_priority,
+        'department_stats': department_stats,
+        'tickets_per_day': tickets_per_day,
+        'start_date': start_date,
+        'end_date': end_date,
+        'departments': departments,
+        'selected_department': department_id,
+        'unassigned_tickets': unassigned_tickets,
+        'resolution_rate': resolution_rate,
+        'avg_tickets_per_day': avg_tickets_per_day,
+    }
+    
+    return render(request, 'tickets/reports/ticket_report.html', context)
 
 # 5. Configure URLs in helpdesk_project/urls.py
 

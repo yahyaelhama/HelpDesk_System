@@ -122,7 +122,7 @@
 
     <!-- Ticket Management Sidebar -->
     <div class="col-md-4">
-        {% if user.is_staff %}
+        {% if user.is_staff and not user.is_superuser %}
         <!-- Staff Only: Ticket Assignment -->
         <div class="card mb-4">
             <div class="card-header bg-light">
@@ -161,6 +161,9 @@
                     {% endif %}
                     {% if user == ticket.created_by or user.is_superuser %}
                     <a href="{% url 'update_ticket' ticket.id %}" class="btn btn-primary">Edit Ticket</a>
+                    {% endif %}
+                    {% if user.is_superuser %}
+                    <a href="{% url 'delete_ticket' ticket.id %}" class="btn btn-danger">Delete Ticket</a>
                     {% endif %}
                 </div>
             </div>

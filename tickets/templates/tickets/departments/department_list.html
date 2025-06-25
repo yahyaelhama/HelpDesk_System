@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Department Management{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="mb-4">Department Management</h2>
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Departments</h5>
+                <a href="{% url 'department_create' %}" class="btn btn-light btn-sm">
+                    <i class="bi bi-plus-circle"></i> Add Department
+                </a>
+            </div>
+            <div class="card-body">
+                {% if departments %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>Staff Count</th>
+                                <th>Ticket Count</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for department in departments %}
+                            <tr>
+                                <td>{{ department }}</td>
+                                <td>{{ department.description|truncatechars:50|default:"-" }}</td>
+                                <td>{{ department.staff.count }}</td>
+                                <td>{{ department.tickets.count }}</td>
+                                <td>
+                                    <a href="{% url 'department_edit' department.id %}" class="btn btn-sm btn-primary">Edit</a>
+                                    {% if department.tickets.count == 0 %}
+                                    <a href="{% url 'department_delete' department.id %}" class="btn btn-sm btn-danger">Delete</a>
+                                    {% else %}
+                                    <button type="button" class="btn btn-sm btn-danger" disabled title="Cannot delete department with tickets">Delete</button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center">No departments found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

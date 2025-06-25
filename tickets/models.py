@@ -3,24 +3,13 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 
 class Department(models.Model):
-    DEPARTMENT_CHOICES = (
-        ('it_support', 'IT Support'),
-        ('customer_service', 'Customer Service'),
-        ('hr', 'Human Resources'),
-        ('finance', 'Finance'),
-        ('operations', 'Operations'),
-        ('maintenance', 'Maintenance'),
-        ('security', 'Security'),
-        ('sales', 'Sales'),
-    )
-    
-    name = models.CharField(max_length=100, unique=True, choices=DEPARTMENT_CHOICES)
+    name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True)
     staff = models.ManyToManyField(User, related_name='departments', limit_choices_to={'is_staff': True})
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.get_name_display()
+        return self.name
 
 class Ticket(models.Model):
     STATUS_CHOICES = (
