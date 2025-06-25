@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.core.paginator import Paginator
 import os
 
@@ -85,6 +85,13 @@ def dashboard(request):
             Q(description__icontains=search)
         )
     
+    # Get chart data
+    status_data = tickets.values('status').annotate(count=Count('status')).order_by('status')
+    priority_data = tickets.values('priority').annotate(count=Count('priority')).order_by('priority')
+    
+    # Get department distribution
+    department_data = tickets.values('department__name').annotate(count=Count('department')).order_by('-count')
+    
     # Paginate results
     paginator = Paginator(tickets, 10)  # 10 tickets per page
     page_number = request.GET.get('page')
@@ -97,6 +104,9 @@ def dashboard(request):
         'search_query': search,
         'departments': user_departments,
         'selected_department': department_id,
+        'status_data': list(status_data),
+        'priority_data': list(priority_data),
+        'department_data': list(department_data),
     }
     return render(request, 'tickets/dashboard.html', context)
 

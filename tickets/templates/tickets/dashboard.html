@@ -5,6 +5,50 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-12">
+        <h3 class="mb-4">Helpdesk Analytics</h3>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Status Chart -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Tickets by Status</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Priority Chart -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Tickets by Priority</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="priorityChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Department Chart -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Tickets by Department</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="departmentChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
         <div class="card">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Tickets Dashboard</h5>
@@ -142,4 +186,127 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Status Chart
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        const statusLabels = {
+            'new': 'New',
+            'in_progress': 'In Progress',
+            'pending': 'Pending',
+            'resolved': 'Resolved',
+            'closed': 'Closed'
+        };
+        const statusColors = {
+            'new': '#0dcaf0',         // info
+            'in_progress': '#0d6efd',  // primary
+            'pending': '#ffc107',     // warning
+            'resolved': '#198754',    // success
+            'closed': '#6c757d'       // secondary
+        };
+        
+        const statusData = {{ status_data|safe }};
+        const statusLabelsArray = statusData.map(item => statusLabels[item.status] || item.status);
+        const statusCountsArray = statusData.map(item => item.count);
+        const statusColorsArray = statusData.map(item => statusColors[item.status] || '#000000');
+        
+        new Chart(statusCtx, {
+            type: 'doughnut',
+            data: {
+                labels: statusLabelsArray,
+                datasets: [{
+                    data: statusCountsArray,
+                    backgroundColor: statusColorsArray,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
+            }
+        });
+        
+        // Priority Chart
+        const priorityCtx = document.getElementById('priorityChart').getContext('2d');
+        const priorityLabels = {
+            'low': 'Low',
+            'medium': 'Medium',
+            'high': 'High',
+            'urgent': 'Urgent'
+        };
+        const priorityColors = {
+            'low': '#198754',     // success
+            'medium': '#0dcaf0',  // info
+            'high': '#ffc107',    // warning
+            'urgent': '#dc3545'   // danger
+        };
+        
+        const priorityData = {{ priority_data|safe }};
+        const priorityLabelsArray = priorityData.map(item => priorityLabels[item.priority] || item.priority);
+        const priorityCountsArray = priorityData.map(item => item.count);
+        const priorityColorsArray = priorityData.map(item => priorityColors[item.priority] || '#000000');
+        
+        new Chart(priorityCtx, {
+            type: 'pie',
+            data: {
+                labels: priorityLabelsArray,
+                datasets: [{
+                    data: priorityCountsArray,
+                    backgroundColor: priorityColorsArray,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                    }
+                }
+            }
+        });
+        
+        // Department Chart
+        const departmentCtx = document.getElementById('departmentChart').getContext('2d');
+        const departmentData = {{ department_data|safe }};
+        const departmentLabelsArray = departmentData.map(item => item.department__name);
+        const departmentCountsArray = departmentData.map(item => item.count);
+        
+        new Chart(departmentCtx, {
+            type: 'bar',
+            data: {
+                labels: departmentLabelsArray,
+                datasets: [{
+                    label: 'Number of Tickets',
+                    data: departmentCountsArray,
+                    backgroundColor: '#0d6efd',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}
