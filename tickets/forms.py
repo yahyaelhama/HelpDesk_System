@@ -42,10 +42,15 @@ class TicketForm(forms.ModelForm):
 class AssignTicketForm(forms.ModelForm):
     class Meta:
         model = Ticket
-        fields = ['assigned_to', 'status']
+        fields = ['assigned_to', 'status', 'resolution_notes']
         widgets = {
             'assigned_to': forms.Select(attrs={'class': 'form-select'}),
-            'status': forms.Select(attrs={'class': 'form-select'})
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'resolution_notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Provide resolution details when marking a ticket as resolved'
+            })
         }
 
     def __init__(self, *args, department=None, **kwargs):
@@ -56,6 +61,9 @@ class AssignTicketForm(forms.ModelForm):
         else:
             self.fields['assigned_to'].queryset = User.objects.filter(is_staff=True)
         self.fields['assigned_to'].empty_label = "-- Assign to Staff Member --"
+        
+        # Make resolution_notes required only when status is 'resolved'
+        self.fields['resolution_notes'].required = False
 
 class CommentForm(forms.ModelForm):
     class Meta:
@@ -146,3 +154,18 @@ class StaffEditForm(forms.ModelForm):
             # Update departments
             user.departments.set(self.cleaned_data['departments'])
         return user
+
+class DepartmentForm(forms.ModelForm):
+    class Meta:
+        model = Department
+        fields = ['name', 'description', 'staff']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'staff': forms.CheckboxSelectMultiple(),
+        }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['staff'].queryset = User.objects.filter(is_staff=True)
+        self.fields['staff'].required = False

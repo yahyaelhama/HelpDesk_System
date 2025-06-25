@@ -1,0 +1,28 @@
+TICKET RESOLVED
+
+Hello {{ ticket.created_by.first_name|default:ticket.created_by.username }},
+
+We are pleased to inform you that your ticket has been resolved.
+
+TICKET DETAILS:
+- Ticket ID: #{{ ticket.id }}
+- Title: {{ ticket.title }}
+- Status: {% if ticket.status == 'new' %}New{% elif ticket.status == 'in_progress' %}In Progress{% elif ticket.status == 'pending' %}Pending{% elif ticket.status == 'resolved' %}Resolved{% elif ticket.status == 'closed' %}Closed{% endif %}
+- Priority: {% if ticket.priority == 'low' %}Low{% elif ticket.priority == 'medium' %}Medium{% elif ticket.priority == 'high' %}High{% elif ticket.priority == 'urgent' %}Urgent{% endif %}
+- Department: {{ ticket.department.name|default:"Not assigned" }}
+- Created on: {{ ticket.created_at|date:"F j, Y, g:i a" }}
+- Resolved on: {{ ticket.updated_at|date:"F j, Y, g:i a" }}
+
+{% if ticket.resolution_notes %}
+RESOLUTION NOTES:
+{{ ticket.resolution_notes }}
+{% endif %}
+
+If you have any further questions or if the issue persists, please feel free to contact us.
+
+To view your ticket, please visit: {{ ticket_url }}
+
+This is an automated message. Please do not reply to this email.
+Thank you for using our helpdesk system.
+
+Helpdesk Support Team 

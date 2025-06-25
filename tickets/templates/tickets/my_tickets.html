@@ -18,7 +18,7 @@
                                 <option value="">-- Filter by Department --</option>
                                 {% for dept in departments %}
                                 <option value="{{ dept.id }}" {% if selected_department == dept.id|stringformat:"i" %}selected{% endif %}>
-                                    {{ dept.get_name_display }}
+                                    {{ dept.name }}
                                 </option>
                                 {% endfor %}
                             </select>
@@ -69,7 +69,7 @@
                             <tr>
                                 <td>#{{ ticket.id }}</td>
                                 <td>{{ ticket.title }}</td>
-                                <td>{{ ticket.department.get_name_display }}</td>
+                                <td>{{ ticket.department.name }}</td>
                                 <td>
                                     {% if ticket.status == 'new' %}
                                     <span class="badge bg-info">New</span>

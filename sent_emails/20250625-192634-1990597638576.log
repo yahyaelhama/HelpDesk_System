@@ -1,0 +1,11 @@
+Content-Type: text/plain; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Subject: Test Email from Django Helpdesk
+From: helpdesk@example.com
+To: test@example.com
+Date: Wed, 25 Jun 2025 18:26:34 -0000
+Message-ID: <175087599487.44416.6737855386434481058@DESKTOP-EH9H5DA>
+
+This is a test email from the Django Helpdesk system.
+-------------------------------------------------------------------------------

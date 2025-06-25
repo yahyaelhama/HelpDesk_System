@@ -1,0 +1,83 @@
+INFO 2025-06-25 19:22:03,972 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:22:04,048 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:22:04,106 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:22:04,180 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:22:04,196 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:22:35,955 autoreload C:\Users\dell\django_helpdesk\tickets\utils.py changed, reloading.
+INFO 2025-06-25 19:22:36,011 autoreload C:\Users\dell\django_helpdesk\helpdesk_project\settings.py changed, reloading.
+INFO 2025-06-25 19:22:36,121 autoreload C:\Users\dell\django_helpdesk\helpdesk_project\settings.py changed, reloading.
+INFO 2025-06-25 19:22:36,578 autoreload C:\Users\dell\django_helpdesk\tickets\utils.py changed, reloading.
+INFO 2025-06-25 19:22:36,653 autoreload C:\Users\dell\django_helpdesk\tickets\utils.py changed, reloading.
+INFO 2025-06-25 19:22:38,793 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:22:38,864 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:22:38,905 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:22:39,369 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:22:39,428 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:25:36,150 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:27:16,408 autoreload C:\Users\dell\django_helpdesk\helpdesk_project\settings.py changed, reloading.
+INFO 2025-06-25 19:27:16,503 autoreload C:\Users\dell\django_helpdesk\helpdesk_project\settings.py changed, reloading.
+INFO 2025-06-25 19:27:16,724 autoreload C:\Users\dell\django_helpdesk\helpdesk_project\settings.py changed, reloading.
+INFO 2025-06-25 19:27:16,706 autoreload C:\Users\dell\django_helpdesk\helpdesk_project\settings.py changed, reloading.
+INFO 2025-06-25 19:27:16,706 autoreload C:\Users\dell\django_helpdesk\helpdesk_project\settings.py changed, reloading.
+INFO 2025-06-25 19:27:16,927 autoreload C:\Users\dell\django_helpdesk\helpdesk_project\settings.py changed, reloading.
+INFO 2025-06-25 19:27:18,484 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:27:18,779 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:27:19,055 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:27:19,074 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:27:19,197 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:27:19,672 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:28:35,632 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:28:51,566 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:28:51,970 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:28:52,147 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:28:52,193 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:28:52,315 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:28:52,405 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:28:52,391 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:28:55,107 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:28:55,120 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:28:55,252 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:28:55,332 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:28:55,527 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:28:55,949 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:28:56,154 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:29:05,315 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:29:05,241 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:29:05,321 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:29:05,459 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:29:05,918 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:29:06,129 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:29:06,313 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:29:08,594 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:29:08,641 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:29:08,838 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:29:08,857 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:29:09,013 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:29:09,149 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:29:09,301 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:29:45,371 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:30:47,653 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:30:47,678 autoreload C:\Users\dell\django_helpdesk\helpdesk_project\settings.py changed, reloading.
+INFO 2025-06-25 19:30:47,697 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:30:47,820 autoreload C:\Users\dell\django_helpdesk\helpdesk_project\settings.py changed, reloading.
+INFO 2025-06-25 19:30:48,082 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:30:48,331 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:30:48,646 autoreload C:\Users\dell\django_helpdesk\tickets\views.py changed, reloading.
+INFO 2025-06-25 19:30:48,807 autoreload C:\Users\dell\django_helpdesk\helpdesk_project\settings.py changed, reloading.
+INFO 2025-06-25 19:30:51,099 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:30:52,272 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:30:52,316 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:30:52,496 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:30:53,808 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:30:53,847 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:30:53,865 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:30:54,418 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 19:31:11,274 views About to send resolved notification for ticket #17
+INFO 2025-06-25 19:31:11,274 views About to send resolved notification for ticket #17
+INFO 2025-06-25 19:31:11,275 utils Attempting to send ticket resolution email for ticket #17
+INFO 2025-06-25 19:31:11,275 utils Attempting to send ticket resolution email for ticket #17
+INFO 2025-06-25 19:31:11,318 utils Successfully sent ticket resolution email for ticket #17 to yahyaelhama@gmail.com
+INFO 2025-06-25 19:31:11,318 utils Successfully sent ticket resolution email for ticket #17 to yahyaelhama@gmail.com
+INFO 2025-06-25 19:31:11,320 views Resolved notification sent for ticket #17
+INFO 2025-06-25 19:31:11,320 views Resolved notification sent for ticket #17
+WARNING 2025-06-25 19:31:15,860 log Not Found: /.well-known/appspecific/com.chrome.devtools.json

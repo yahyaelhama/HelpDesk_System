@@ -36,6 +36,7 @@ class Ticket(models.Model):
     priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    resolution_notes = models.TextField(blank=True, null=True, help_text="Notes about how the ticket was resolved")
     
     def __str__(self):
         return f"{self.id} - {self.title}"

@@ -16,6 +16,14 @@
                     <h6 class="text-muted">Description</h6>
                     <p>{{ ticket.description }}</p>
                 </div>
+                
+                {% if ticket.resolution_notes and ticket.status == 'resolved' %}
+                <div class="mb-4 p-3 bg-success-subtle border-start border-4 border-success">
+                    <h6 class="text-success">Resolution Notes</h6>
+                    <p>{{ ticket.resolution_notes }}</p>
+                </div>
+                {% endif %}
+                
                 <div class="row">
                     <div class="col-md-6">
                         <p><strong>Status:</strong> 
@@ -139,6 +147,11 @@
                         <label class="form-label">Status:</label>
                         {{ assign_form.status }}
                     </div>
+                    <div class="mb-3 resolution-notes-field" style="display: none;">
+                        <label class="form-label">Resolution Notes:</label>
+                        {{ assign_form.resolution_notes }}
+                        <div class="form-text">Please provide details about how this ticket was resolved.</div>
+                    </div>
                     <div class="d-grid">
                         <button type="submit" name="update_ticket" class="btn btn-primary">Update Ticket</button>
                     </div>
@@ -170,4 +183,31 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get the status dropdown and resolution notes field
+        const statusDropdown = document.querySelector('select[name="status"]');
+        const resolutionNotesField = document.querySelector('.resolution-notes-field');
+        
+        if (statusDropdown && resolutionNotesField) {
+            // Function to toggle resolution notes field visibility
+            function toggleResolutionNotes() {
+                if (statusDropdown.value === 'resolved') {
+                    resolutionNotesField.style.display = 'block';
+                } else {
+                    resolutionNotesField.style.display = 'none';
+                }
+            }
+            
+            // Initial check
+            toggleResolutionNotes();
+            
+            // Add event listener for status changes
+            statusDropdown.addEventListener('change', toggleResolutionNotes);
+        }
+    });
+</script>
 {% endblock %} 

@@ -1,0 +1,21 @@
+TICKET CREATED SUCCESSFULLY
+
+Hello {{ ticket.created_by.first_name|default:ticket.created_by.username }},
+
+Your ticket has been created successfully. Our support team will review it shortly.
+
+TICKET DETAILS:
+- Ticket ID: #{{ ticket.id }}
+- Title: {{ ticket.title }}
+- Status: {% if ticket.status == 'new' %}New{% elif ticket.status == 'in_progress' %}In Progress{% elif ticket.status == 'pending' %}Pending{% elif ticket.status == 'resolved' %}Resolved{% elif ticket.status == 'closed' %}Closed{% endif %}
+- Priority: {% if ticket.priority == 'low' %}Low{% elif ticket.priority == 'medium' %}Medium{% elif ticket.priority == 'high' %}High{% elif ticket.priority == 'urgent' %}Urgent{% endif %}
+- Department: {{ ticket.department.name|default:"Not assigned" }}
+- Created on: {{ ticket.created_at|date:"F j, Y, g:i a" }}
+
+You will receive another email when your ticket is resolved.
+
+To view your ticket, please visit: {{ ticket_url }}
+
+This is an automated message. Please do not reply to this email.
+
+Helpdesk Support Team 

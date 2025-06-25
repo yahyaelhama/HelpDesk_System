@@ -8,10 +8,16 @@ import csv
 from datetime import datetime, timedelta
 from django.http import HttpResponse
 from django.db.models.functions import TruncDay, TruncWeek, TruncMonth
+from django.utils import timezone
+import logging
 
 from .models import Ticket, Comment, Attachment, Department
-from .forms import TicketForm, CommentForm, AttachmentForm, AssignTicketForm, StaffCreationForm, StaffEditForm
+from .forms import TicketForm, CommentForm, AttachmentForm, AssignTicketForm, StaffCreationForm, StaffEditForm, DepartmentForm
 from django.contrib.auth.models import User
+from .utils import send_ticket_created_email, send_ticket_resolved_email
+
+# Get a logger
+logger = logging.getLogger(__name__)
 
 @login_required
 def delete_attachment(request, ticket_id, attachment_id):
@@ -220,6 +226,15 @@ def create_ticket(request):
                     messages.warning(request, 'Ticket created but there was an error with the attachment.')
             else:
                 messages.success(request, 'Ticket created successfully!')
+            
+            # Send email notification
+            logger.info(f"About to send email notification for ticket #{ticket.id}")
+            try:
+                send_ticket_created_email(request, ticket)
+                logger.info(f"Email notification sent for ticket #{ticket.id}")
+            except Exception as e:
+                logger.error(f"Error sending email for ticket #{ticket.id}: {str(e)}")
+                messages.warning(request, 'Ticket created but there was an error sending the email notification.')
                 
             return redirect('ticket_detail', pk=ticket.pk)
     else:
@@ -276,9 +291,28 @@ def ticket_detail(request, pk):
     
     # Handle ticket assignment and status update (staff only, not superusers)
     if request.method == 'POST' and 'update_ticket' in request.POST and request.user.is_staff and not request.user.is_superuser:
+        old_status = ticket.status
         assign_form = AssignTicketForm(request.POST, instance=ticket, department=ticket.department)
         if assign_form.is_valid():
-            assign_form.save()
+            updated_ticket = assign_form.save(commit=False)
+            
+            # Check if resolution notes are provided when resolving a ticket
+            if updated_ticket.status == 'resolved' and not updated_ticket.resolution_notes:
+                messages.error(request, 'Please provide resolution notes when resolving a ticket.')
+                return redirect('ticket_detail', pk=pk)
+                
+            updated_ticket.save()
+            
+            # Send email notification if ticket is newly resolved
+            if updated_ticket.status == 'resolved' and old_status != 'resolved':
+                logger.info(f"About to send resolved notification for ticket #{ticket.id}")
+                try:
+                    send_ticket_resolved_email(request, updated_ticket)
+                    logger.info(f"Resolved notification sent for ticket #{ticket.id}")
+                except Exception as e:
+                    logger.error(f"Error sending resolved notification for ticket #{ticket.id}: {str(e)}")
+                    messages.warning(request, 'Ticket resolved but there was an error sending the email notification.')
+                
             messages.success(request, 'Ticket updated successfully!')
             return redirect('ticket_detail', pk=pk)
     
