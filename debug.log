@@ -81,3 +81,26 @@ INFO 2025-06-25 19:31:11,318 utils Successfully sent ticket resolution email for
 INFO 2025-06-25 19:31:11,320 views Resolved notification sent for ticket #17
 INFO 2025-06-25 19:31:11,320 views Resolved notification sent for ticket #17
 WARNING 2025-06-25 19:31:15,860 log Not Found: /.well-known/appspecific/com.chrome.devtools.json
+INFO 2025-06-25 20:43:21,468 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 20:44:37,525 views About to send email notification for ticket #18
+INFO 2025-06-25 20:44:37,525 views About to send email notification for ticket #18
+INFO 2025-06-25 20:44:37,527 utils Attempting to send ticket creation email for ticket #18
+INFO 2025-06-25 20:44:37,527 utils Attempting to send ticket creation email for ticket #18
+INFO 2025-06-25 20:44:39,385 utils Successfully sent ticket creation email for ticket #18 to hichamagrad94@gmail.com
+INFO 2025-06-25 20:44:39,385 utils Successfully sent ticket creation email for ticket #18 to hichamagrad94@gmail.com
+INFO 2025-06-25 20:44:39,388 views Email notification sent for ticket #18
+INFO 2025-06-25 20:44:39,388 views Email notification sent for ticket #18
+INFO 2025-06-25 20:45:53,588 views About to send resolved notification for ticket #18
+INFO 2025-06-25 20:45:53,588 views About to send resolved notification for ticket #18
+INFO 2025-06-25 20:45:53,589 utils Attempting to send ticket resolution email for ticket #18
+INFO 2025-06-25 20:45:53,589 utils Attempting to send ticket resolution email for ticket #18
+INFO 2025-06-25 20:45:55,177 utils Successfully sent ticket resolution email for ticket #18 to hichamagrad94@gmail.com
+INFO 2025-06-25 20:45:55,177 utils Successfully sent ticket resolution email for ticket #18 to hichamagrad94@gmail.com
+INFO 2025-06-25 20:45:55,179 views Resolved notification sent for ticket #18
+INFO 2025-06-25 20:45:55,179 views Resolved notification sent for ticket #18
+INFO 2025-06-25 20:46:20,108 autoreload C:\Users\dell\django_helpdesk\tickets\utils.py changed, reloading.
+INFO 2025-06-25 20:46:21,776 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 20:57:57,985 autoreload C:\Users\dell\django_helpdesk\helpdesk_project\settings.py changed, reloading.
+INFO 2025-06-25 20:57:59,516 autoreload Watching for file changes with StatReloader
+INFO 2025-06-25 20:58:18,360 autoreload C:\Users\dell\django_helpdesk\helpdesk_project\settings.py changed, reloading.
+INFO 2025-06-25 20:58:19,185 autoreload Watching for file changes with StatReloader

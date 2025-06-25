@@ -137,20 +137,19 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Email Configuration
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'  # Output to console for debugging
-# EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
-# EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'  # Directory where emails will be saved as files
-
-# For production, use SMTP backend:
-# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.gmail.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = 'your-email@gmail.com'
-# EMAIL_HOST_PASSWORD = 'your-app-password'
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_USE_SSL = False
+EMAIL_HOST_USER = 'YOUR_EMAIL'
+# For Gmail: Use an App Password if 2-Step Verification is enabled
+# Get one at: https://myaccount.google.com/apppasswords
+EMAIL_HOST_PASSWORD = 'YOUR_PASSWORD'  # Replace with your Gmail App Password
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Helpdesk specific settings
-HELPDESK_EMAIL_FROM = 'helpdesk@example.com'
+HELPDESK_EMAIL_FROM = DEFAULT_FROM_EMAIL  # Use the same email as DEFAULT_FROM_EMAIL
 HELPDESK_EMAIL_SUBJECT_PREFIX = '[Helpdesk] '
 
 # Site ID for django.contrib.sites
