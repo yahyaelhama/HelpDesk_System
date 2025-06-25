@@ -60,11 +60,21 @@ def dashboard(request):
     search = request.GET.get('search', '')
     department_id = request.GET.get('department', '')
     
-    # Get user's departments
-    user_departments = request.user.departments.all()
-    
-    # Start with tickets from user's departments
-    tickets = Ticket.objects.filter(department__in=user_departments).order_by('-created_at')
+    # If user is superuser (root), show all tickets across all departments
+    if request.user.is_superuser:
+        tickets = Ticket.objects.all().order_by('-created_at')
+        departments = Department.objects.all()
+    else:
+        # Get user's departments
+        user_departments = request.user.departments.all()
+        
+        # Check if staff user has any departments, if not show a message
+        if not user_departments.exists():
+            messages.warning(request, "You don't belong to any departments. Please contact an administrator to be assigned to a department.")
+        
+        # Start with tickets from user's departments
+        tickets = Ticket.objects.filter(department__in=user_departments).order_by('-created_at')
+        departments = user_departments
     
     # Filter by department if provided
     if department_id:
@@ -85,33 +95,47 @@ def dashboard(request):
             Q(description__icontains=search)
         )
     
-    # Get chart data
-    status_data = tickets.values('status').annotate(count=Count('status')).order_by('status')
-    priority_data = tickets.values('priority').annotate(count=Count('priority')).order_by('priority')
+    # Initialize chart data context variables
+    context = {
+        'page_obj': None,
+        'status_filter': status,
+        'priority_filter': priority,
+        'search_query': search,
+        'departments': departments,
+        'selected_department': department_id,
+    }
     
-    # Get department distribution
-    department_data = tickets.values('department__name').annotate(count=Count('department')).order_by('-count')
+    # Only prepare chart data for superusers
+    if request.user.is_superuser:
+        # Get chart data
+        status_data = tickets.values('status').annotate(count=Count('status')).order_by('status')
+        priority_data = tickets.values('priority').annotate(count=Count('priority')).order_by('priority')
+        
+        # Get department distribution
+        department_data = tickets.values('department__name').annotate(count=Count('department')).order_by('-count')
+        
+        # Add chart data to context
+        context.update({
+            'status_data': list(status_data),
+            'priority_data': list(priority_data),
+            'department_data': list(department_data),
+        })
     
     # Paginate results
     paginator = Paginator(tickets, 10)  # 10 tickets per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
+    context['page_obj'] = page_obj
     
-    context = {
-        'page_obj': page_obj,
-        'status_filter': status,
-        'priority_filter': priority,
-        'search_query': search,
-        'departments': user_departments,
-        'selected_department': department_id,
-        'status_data': list(status_data),
-        'priority_data': list(priority_data),
-        'department_data': list(department_data),
-    }
     return render(request, 'tickets/dashboard.html', context)
 
 @login_required
 def my_tickets(request):
+    # Prevent staff and superusers from viewing my_tickets
+    if request.user.is_staff or request.user.is_superuser:
+        messages.warning(request, "Staff and administrators do not have personal tickets.")
+        return redirect('dashboard')
+    
     # Get filter parameters
     status = request.GET.get('status', '')
     priority = request.GET.get('priority', '')
@@ -138,10 +162,7 @@ def my_tickets(request):
     tickets = tickets.order_by('-created_at')
     
     # Get departments for filter dropdown
-    if request.user.is_staff:
-        departments = request.user.departments.all()
-    else:
-        departments = Department.objects.all()
+    departments = Department.objects.all()
     
     context = {
         'tickets': tickets,
@@ -155,6 +176,14 @@ def my_tickets(request):
 
 @login_required
 def create_ticket(request):
+    # Prevent staff and superusers from creating tickets
+    if request.user.is_staff or request.user.is_superuser:
+        messages.error(request, "Administrators and staff cannot create tickets.")
+        if request.user.is_staff:
+            return redirect('dashboard')
+        else:
+            return redirect('my_tickets')
+    
     if request.method == 'POST':
         form = TicketForm(request.POST, user=request.user)
         attachment_form = AttachmentForm(request.POST, request.FILES)
@@ -192,7 +221,7 @@ def ticket_detail(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
     
     # Check if user has access to this ticket
-    if not (request.user.is_staff and request.user.departments.filter(id=ticket.department.id).exists()) and request.user != ticket.created_by:
+    if not (request.user.is_superuser or (request.user.is_staff and request.user.departments.filter(id=ticket.department.id).exists()) or request.user == ticket.created_by):
         messages.error(request, "You don't have permission to view this ticket.")
         return redirect('my_tickets')
     
@@ -204,8 +233,8 @@ def ticket_detail(request, pk):
     attachment_form = AttachmentForm()
     assign_form = None
     
-    # Only create assign form for staff members in the same department
-    if request.user.is_staff and request.user.departments.filter(id=ticket.department.id).exists():
+    # Only create assign form for staff members in the same department or superusers
+    if request.user.is_superuser or (request.user.is_staff and request.user.departments.filter(id=ticket.department.id).exists()):
         assign_form = AssignTicketForm(instance=ticket, department=ticket.department)
     
     # Handle comment submission

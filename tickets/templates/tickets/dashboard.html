@@ -5,10 +5,17 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-12">
-        <h3 class="mb-4">Helpdesk Analytics</h3>
+        <h3 class="mb-4">
+            {% if user.is_superuser %}
+            Helpdesk Analytics
+            {% else %}
+            Tickets Dashboard
+            {% endif %}
+        </h3>
     </div>
 </div>
 
+{% if user.is_superuser %}
 <div class="row mb-4">
     <!-- Status Chart -->
     <div class="col-md-4">
@@ -46,12 +53,19 @@
         </div>
     </div>
 </div>
+{% endif %}
 
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="card">
             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Tickets Dashboard</h5>
+                <h5 class="card-title mb-0">
+                    {% if user.is_superuser %}
+                    Tickets Dashboard
+                    {% else %}
+                    Manage Tickets
+                    {% endif %}
+                </h5>
             </div>
             <div class="card-body">
                 <form method="get" class="mb-4">
@@ -189,6 +203,7 @@
 {% endblock %}
 
 {% block extra_js %}
+{% if user.is_superuser %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Status Chart
@@ -209,9 +224,15 @@
         };
         
         const statusData = {{ status_data|safe }};
-        const statusLabelsArray = statusData.map(item => statusLabels[item.status] || item.status);
-        const statusCountsArray = statusData.map(item => item.count);
-        const statusColorsArray = statusData.map(item => statusColors[item.status] || '#000000');
+        const statusLabelsArray = statusData.map(function(item) { 
+            return statusLabels[item.status] || item.status;
+        });
+        const statusCountsArray = statusData.map(function(item) {
+            return item.count;
+        });
+        const statusColorsArray = statusData.map(function(item) {
+            return statusColors[item.status] || '#000000';
+        });
         
         new Chart(statusCtx, {
             type: 'doughnut',
@@ -227,7 +248,7 @@
                 responsive: true,
                 plugins: {
                     legend: {
-                        position: 'bottom',
+                        position: 'bottom'
                     }
                 }
             }
@@ -249,9 +270,15 @@
         };
         
         const priorityData = {{ priority_data|safe }};
-        const priorityLabelsArray = priorityData.map(item => priorityLabels[item.priority] || item.priority);
-        const priorityCountsArray = priorityData.map(item => item.count);
-        const priorityColorsArray = priorityData.map(item => priorityColors[item.priority] || '#000000');
+        const priorityLabelsArray = priorityData.map(function(item) {
+            return priorityLabels[item.priority] || item.priority;
+        });
+        const priorityCountsArray = priorityData.map(function(item) {
+            return item.count;
+        });
+        const priorityColorsArray = priorityData.map(function(item) {
+            return priorityColors[item.priority] || '#000000';
+        });
         
         new Chart(priorityCtx, {
             type: 'pie',
@@ -267,7 +294,7 @@
                 responsive: true,
                 plugins: {
                     legend: {
-                        position: 'bottom',
+                        position: 'bottom'
                     }
                 }
             }
@@ -276,8 +303,12 @@
         // Department Chart
         const departmentCtx = document.getElementById('departmentChart').getContext('2d');
         const departmentData = {{ department_data|safe }};
-        const departmentLabelsArray = departmentData.map(item => item.department__name);
-        const departmentCountsArray = departmentData.map(item => item.count);
+        const departmentLabelsArray = departmentData.map(function(item) {
+            return item.department__name;
+        });
+        const departmentCountsArray = departmentData.map(function(item) {
+            return item.count;
+        });
         
         new Chart(departmentCtx, {
             type: 'bar',
@@ -309,4 +340,5 @@
         });
     });
 </script>
+{% endif %}
 {% endblock %}

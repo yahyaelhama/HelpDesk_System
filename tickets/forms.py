@@ -6,8 +6,11 @@ class TicketForm(forms.ModelForm):
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         if user:
-            # If user is staff, show their departments
-            if user.is_staff:
+            # If user is superuser, show all departments
+            if user.is_superuser:
+                self.fields['department'].queryset = Department.objects.all()
+            # If user is staff (but not superuser), show their departments
+            elif user.is_staff:
                 self.fields['department'].queryset = user.departments.all()
             # If user is not staff, show all departments
             else:
