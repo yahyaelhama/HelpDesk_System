@@ -1127,6 +1127,13 @@ def ticket_report(request):
         'unassigned_tickets': unassigned_tickets,
         'resolution_rate': resolution_rate,
         'avg_tickets_per_day': avg_tickets_per_day,
+        # Ensure these are explicitly set to empty lists if no data exists
+        'priority_data': [
+            {'priority': 'low', 'count': low_priority},
+            {'priority': 'medium', 'count': medium_priority},
+            {'priority': 'high', 'count': high_priority},
+            {'priority': 'urgent', 'count': urgent_priority}
+        ] if total_tickets > 0 else [],
     }
     
     return render(request, 'tickets/reports/ticket_report.html', context)

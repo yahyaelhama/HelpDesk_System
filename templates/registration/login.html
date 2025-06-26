@@ -1,5 +1,45 @@
 {% extends "base.html" %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+    .card {
+        border: none;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px 10px 0 0 !important;
+        padding: 20px;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        padding: 10px;
+    }
+    
+    .btn-primary:hover {
+        background: linear-gradient(135deg, #5a6fd9 0%, #6a429c 100%);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+    
+    a {
+        color: #667eea;
+        text-decoration: none;
+    }
+    
+    a:hover {
+        color: #764ba2;
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -11,6 +51,7 @@
                 <div class="card-body">
                     {% if form.errors %}
                         <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>
                             Your username and password didn't match. Please try again.
                         </div>
                     {% endif %}
@@ -18,11 +59,13 @@
                     {% if next %}
                         {% if user.is_authenticated %}
                             <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
                                 Your account doesn't have access to this page. To proceed,
                                 please login with an account that has access.
                             </div>
                         {% else %}
                             <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
                                 Please login to see this page.
                             </div>
                         {% endif %}
@@ -31,15 +74,17 @@
                     <form method="post" action="{% url 'accounts:login' %}">
                         {% csrf_token %}
                         <div class="form-group mb-3">
-                            <label for="id_username">Username</label>
+                            <label for="id_username"><i class="fas fa-user me-2"></i>Username</label>
                             {{ form.username }}
                         </div>
                         <div class="form-group mb-3">
-                            <label for="id_password">Password</label>
+                            <label for="id_password"><i class="fas fa-lock me-2"></i>Password</label>
                             {{ form.password }}
                         </div>
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Login</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-sign-in-alt me-2"></i>Login
+                            </button>
                         </div>
                         <input type="hidden" name="next" value="{{ next }}">
                     </form>

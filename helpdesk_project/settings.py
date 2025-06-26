@@ -142,10 +142,10 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
-EMAIL_HOST_USER = 'YOUR_EMAIL'
+EMAIL_HOST_USER = 'yahyaelhama@gmail.com'
 # For Gmail: Use an App Password if 2-Step Verification is enabled
 # Get one at: https://myaccount.google.com/apppasswords
-EMAIL_HOST_PASSWORD = 'YOUR_PASSWORD'  # Replace with your Gmail App Password
+EMAIL_HOST_PASSWORD = 'rknc lxft acew avgs'  # Replace with your Gmail App Password
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 # Helpdesk specific settings
