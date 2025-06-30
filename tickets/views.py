@@ -31,18 +31,23 @@ def delete_attachment(request, ticket_id, attachment_id):
     # Check if user has permission to delete the attachment
     if request.user == ticket.created_by or request.user == attachment.uploaded_by or request.user.is_superuser:
         try:
-            # Delete the actual file
+            # Delete the actual file if it exists
             if attachment.file:
-                file_path = attachment.file.path
-                if os.path.exists(file_path):
-                    try:
-                        os.remove(file_path)
-                    except (OSError, PermissionError) as e:
-                        messages.error(request, f'Error deleting file: {str(e)}')
-                        return redirect('update_ticket', pk=ticket_id)
-            
-            # Store the filename for the success message
-            filename = os.path.basename(attachment.file.name)
+                try:
+                    file_path = attachment.file.path
+                    if os.path.exists(file_path):
+                        try:
+                            os.remove(file_path)
+                        except (OSError, PermissionError) as e:
+                            messages.error(request, f'Error deleting file: {str(e)}')
+                    
+                    # Store the filename for the success message
+                    filename = os.path.basename(attachment.file.name)
+                except ValueError:
+                    # Handle case where file attribute has no file associated
+                    filename = "attachment"
+            else:
+                filename = "attachment"
             
             # Delete the attachment record
             attachment.delete()
@@ -256,7 +261,7 @@ def ticket_detail(request, pk):
         return redirect('my_tickets')
     
     comments = ticket.comments.all().order_by('created_at')
-    attachments = ticket.attachments.all()
+    attachments = ticket.attachments.filter(file__isnull=False).all()  # Only get attachments with valid files
     
     # Forms
     comment_form = CommentForm()
@@ -281,7 +286,7 @@ def ticket_detail(request, pk):
     # Handle attachment upload
     if request.method == 'POST' and 'submit_attachment' in request.POST:
         attachment_form = AttachmentForm(request.POST, request.FILES)
-        if attachment_form.is_valid():
+        if attachment_form.is_valid() and 'file' in request.FILES:
             attachment = attachment_form.save(commit=False)
             attachment.ticket = ticket
             attachment.uploaded_by = request.user
@@ -335,7 +340,7 @@ def update_ticket(request, pk):
         messages.error(request, "You don't have permission to update this ticket.")
         return redirect('ticket_detail', pk=pk)
     
-    if request.method == 'POST':
+    if request.method == 'POST' and request.POST.get('form_type') == 'update_ticket':
         form = TicketForm(request.POST, instance=ticket, user=request.user)
         attachment_form = AttachmentForm(request.POST, request.FILES)
         

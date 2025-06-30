@@ -306,6 +306,7 @@
                 <div class="mb-4">
                     {% for attachment in attachments %}
                     <div class="attachment-item">
+                        {% if attachment.file %}
                         <a href="{{ attachment.file.url }}" target="_blank" class="attachment-link">
                             <i class="fas fa-file"></i>
                             {{ attachment.file.name|slice:"19:" }}
@@ -325,6 +326,11 @@
                             </form>
                             {% endif %}
                         </div>
+                        {% else %}
+                        <div class="attachment-meta">
+                            <i class="fas fa-exclamation-circle text-warning"></i> File not found
+                        </div>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>
