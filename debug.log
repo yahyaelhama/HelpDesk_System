@@ -2192,3 +2192,22 @@ INFO 2025-06-30 01:09:07,297 utils Successfully sent ticket resolution email for
 INFO 2025-06-30 01:09:07,297 utils Successfully sent ticket resolution email for ticket #22 to Yasser@gmail.com
 INFO 2025-06-30 01:09:07,300 views Resolved notification sent for ticket #22
 INFO 2025-06-30 01:09:07,300 views Resolved notification sent for ticket #22
+INFO 2025-06-30 09:14:55,051 autoreload Watching for file changes with StatReloader
+WARNING 2025-06-30 09:15:02,151 log Not Found: /favicon.ico
+INFO 2025-06-30 11:09:41,848 autoreload Watching for file changes with StatReloader
+INFO 2025-06-30 11:12:01,140 views About to send email notification for ticket #23
+INFO 2025-06-30 11:12:01,140 views About to send email notification for ticket #23
+INFO 2025-06-30 11:12:01,141 utils Attempting to send ticket creation email for ticket #23
+INFO 2025-06-30 11:12:01,141 utils Attempting to send ticket creation email for ticket #23
+INFO 2025-06-30 11:12:03,292 utils Successfully sent ticket creation email for ticket #23 to yahya@gmail.com
+INFO 2025-06-30 11:12:03,292 utils Successfully sent ticket creation email for ticket #23 to yahya@gmail.com
+INFO 2025-06-30 11:12:03,294 views Email notification sent for ticket #23
+INFO 2025-06-30 11:12:03,294 views Email notification sent for ticket #23
+INFO 2025-06-30 11:14:35,966 views About to send resolved notification for ticket #23
+INFO 2025-06-30 11:14:35,966 views About to send resolved notification for ticket #23
+INFO 2025-06-30 11:14:35,967 utils Attempting to send ticket resolution email for ticket #23
+INFO 2025-06-30 11:14:35,967 utils Attempting to send ticket resolution email for ticket #23
+INFO 2025-06-30 11:14:37,768 utils Successfully sent ticket resolution email for ticket #23 to yahya@gmail.com
+INFO 2025-06-30 11:14:37,768 utils Successfully sent ticket resolution email for ticket #23 to yahya@gmail.com
+INFO 2025-06-30 11:14:37,771 views Resolved notification sent for ticket #23
+INFO 2025-06-30 11:14:37,771 views Resolved notification sent for ticket #23
